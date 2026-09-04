@@ -22,7 +22,7 @@ public class HealthcareLocationController {
             @RequestParam double longitude,
             @RequestParam(defaultValue = "10000") int radius) {
 
-        String overpassUrl = "https://overpass-api.de/api/interpreter";
+        String overpassUrl = "https://overpass.kumi.systems/api/interpreter";
 
         String query =
                 "[out:json][timeout:25];" +
