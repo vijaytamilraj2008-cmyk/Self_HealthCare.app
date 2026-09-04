@@ -7,6 +7,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 @RestController
 @RequestMapping("/api/healthcare")
 public class HealthcareLocationController {
@@ -39,28 +42,60 @@ public class HealthcareLocationController {
         headers.set("User-Agent", "Self-Healthcare-App/1.0");
 
         String body = "data=" +
-                java.net.URLEncoder.encode(
-                        query,
-                        java.nio.charset.StandardCharsets.UTF_8
-                );
+                URLEncoder.encode(query, StandardCharsets.UTF_8);
 
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
         try {
+
+            System.out.println("========================================");
+            System.out.println("Healthcare nearby request received");
+            System.out.println("Latitude: " + latitude);
+            System.out.println("Longitude: " + longitude);
+            System.out.println("Radius: " + radius);
+            System.out.println("Calling Overpass API...");
+            System.out.println("========================================");
+
             ResponseEntity<String> response = restTemplate.postForEntity(
                     overpassUrl,
                     request,
                     String.class
             );
 
+            System.out.println("Overpass response status: " + response.getStatusCode());
+            System.out.println("Overpass response received successfully");
+
             return ResponseEntity
                     .status(response.getStatusCode())
                     .body(response.getBody());
 
         } catch (Exception e) {
+
+            System.err.println("========================================");
+            System.err.println("ERROR CALLING OVERPASS API");
+            System.err.println("Error type: " + e.getClass().getName());
+            System.err.println("Error message: " + e.getMessage());
+            e.printStackTrace();
+            System.err.println("========================================");
+
             return ResponseEntity
                     .internalServerError()
-                    .body("{\"error\":\"Unable to retrieve nearby healthcare facilities\"}");
+                    .body("{\"error\":\"Unable to retrieve nearby healthcare facilities\",\"details\":\""
+                            + escapeJson(e.getMessage())
+                            + "\"}");
         }
+    }
+
+    private String escapeJson(String text) {
+
+        if (text == null) {
+            return "Unknown error";
+        }
+
+        return text
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 }
