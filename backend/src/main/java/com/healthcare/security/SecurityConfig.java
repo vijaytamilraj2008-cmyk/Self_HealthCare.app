@@ -38,37 +38,100 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+            // Disable CSRF because this is a stateless REST API
             .csrf(AbstractHttpConfigurer::disable)
+
+            // Enable CORS
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+            // Use stateless JWT authentication
+            .sessionManagement(session ->
+                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+
+            // Authorization rules
             .authorizeHttpRequests(auth -> auth
+
+                // Allow CORS preflight requests
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/reset-password").permitAll()
+
+                // Public authentication endpoints
+                .requestMatchers(
+                    "/api/auth/register",
+                    "/api/auth/login",
+                    "/api/auth/reset-password"
+                ).permitAll()
+
+                // Public health-check endpoint
                 .requestMatchers("/api/auth/health").permitAll()
+
+                // Public nearby healthcare endpoint
+                .requestMatchers("/api/healthcare/nearby").permitAll()
+
+                // Public shared document endpoint
                 .requestMatchers(HttpMethod.GET, "/api/share/*").permitAll()
+
+                // Everything else requires authentication
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+            // JWT authentication filter
+            .addFilterBefore(
+                jwtAuthenticationFilter,
+                UsernamePasswordAuthenticationFilter.class
+            );
 
         return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
+
+        // Read allowed origins from application.properties / environment variable
         List<String> origins = Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList();
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
+
         configuration.setAllowedOriginPatterns(origins);
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
+
+        // Allowed HTTP methods
+        configuration.setAllowedMethods(Arrays.asList(
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+            "OPTIONS"
+        ));
+
+        // Allowed request headers
+        configuration.setAllowedHeaders(Arrays.asList(
+            "Authorization",
+            "Content-Type",
+            "Accept",
+            "X-Requested-With",
+            "Origin"
+        ));
+
+        // Headers exposed to the frontend
+        configuration.setExposedHeaders(Arrays.asList(
+            "Authorization"
+        ));
+
+        // Allow credentials
         configuration.setAllowCredentials(true);
+
+        // Cache CORS preflight response for 1 hour
         configuration.setMaxAge(3600L);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+            new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }

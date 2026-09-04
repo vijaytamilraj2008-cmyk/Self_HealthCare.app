@@ -13,7 +13,7 @@ export function calculateHaversineDistance(
   lat2: number,
   lon2: number
 ): number {
-  const R = 6371; // Earth's radius in km
+  const R = 6371;
 
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
@@ -21,130 +21,157 @@ export function calculateHaversineDistance(
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const c =
+    2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
   const distance = R * c;
 
   return Number(distance.toFixed(1));
 }
 
-// Symptom Dictionary with Safe Educational Recommendations (Never Diagnoses)
+// Symptom Dictionary with Safe Educational Recommendations
 const SYMPTOM_DATABASE: {
-  [key: string]: { dept: string; explanation: string };
+  [key: string]: {
+    dept: string;
+    explanation: string;
+  };
 } = {
   bone: {
     dept: 'Orthopedics',
     explanation:
       'Orthopedics may be an appropriate department for this type of symptom involving bones, joints, or musculoskeletal discomfort.'
   },
+
   joint: {
     dept: 'Orthopedics',
     explanation:
       'Orthopedics may be an appropriate department for this type of symptom involving joints and movement pain.'
   },
+
   knee: {
     dept: 'Orthopedics',
     explanation:
       'Orthopedics may be an appropriate department for this type of symptom involving knee stability or discomfort.'
   },
+
   fracture: {
     dept: 'Orthopedics & Trauma',
     explanation:
       'Orthopedics & Trauma may be an appropriate department for suspected bone trauma or severe pain.'
   },
+
   'back pain': {
     dept: 'Orthopedics / Spine Care',
     explanation:
       'Orthopedics / Spine Care may be an appropriate department for persistent spinal or lumbar discomfort.'
   },
+
   chest: {
     dept: 'Cardiology',
     explanation:
       'Cardiology may be an appropriate department for cardiovascular evaluation. For acute pressure, call emergency services immediately.'
   },
+
   heart: {
     dept: 'Cardiology',
     explanation:
       'Cardiology may be an appropriate department for cardiac rhythm or circulation concerns.'
   },
+
   skin: {
     dept: 'Dermatology',
     explanation:
       'Dermatology may be an appropriate department for rashes, lesions, or epidermal symptoms.'
   },
+
   rash: {
     dept: 'Dermatology',
     explanation:
       'Dermatology may be an appropriate department for allergic dermatological reactions or skin irritation.'
   },
+
   eye: {
     dept: 'Ophthalmology',
     explanation:
       'Ophthalmology may be an appropriate department for vision changes, irritation, or ocular discomfort.'
   },
+
   vision: {
     dept: 'Ophthalmology',
     explanation:
       'Ophthalmology may be an appropriate department for visual acuity testing and eye health.'
   },
+
   stomach: {
     dept: 'Gastroenterology',
     explanation:
       'Gastroenterology may be an appropriate department for abdominal pain, indigestion, or gastrointestinal issues.'
   },
+
   digest: {
     dept: 'Gastroenterology',
     explanation:
       'Gastroenterology may be an appropriate department for persistent digestive or gastric concerns.'
   },
+
   acid: {
     dept: 'Gastroenterology',
     explanation:
       'Gastroenterology may be an appropriate department for acid reflux or upper GI discomfort.'
   },
+
   cough: {
     dept: 'Pulmonology',
     explanation:
       'Pulmonology may be an appropriate department for respiratory symptoms or chronic coughing.'
   },
+
   breath: {
     dept: 'Pulmonology',
     explanation:
       'Pulmonology may be an appropriate department for airway management and shortness of breath.'
   },
+
   headache: {
     dept: 'Neurology / General Medicine',
     explanation:
       'Neurology or General Medicine may be an appropriate department for recurring headaches or neurological signs.'
   },
+
   ear: {
     dept: 'ENT (Otolaryngology)',
     explanation:
       'ENT may be an appropriate department for ear, nose, throat, or balance concerns.'
   },
+
   throat: {
     dept: 'ENT (Otolaryngology)',
     explanation:
       'ENT may be an appropriate department for throat pain, difficulty swallowing, or voice hoarseness.'
   },
+
   tooth: {
     dept: 'Dental / Maxillofacial',
     explanation:
       'Dental care may be an appropriate department for oral hygiene, tooth pain, or gum inflammation.'
   },
+
   fever: {
     dept: 'General Medicine',
     explanation:
       'General Medicine may be an appropriate department for systemic symptoms, fever, and general health review.'
   },
+
   child: {
     dept: 'Pediatrics',
     explanation:
       'Pediatrics may be an appropriate department for infants, children, and adolescent healthcare.'
   },
+
   pediatric: {
     dept: 'Pediatrics',
     explanation:
@@ -153,8 +180,9 @@ const SYMPTOM_DATABASE: {
 };
 
 class LocationService {
-  // Cache only the nearby facilities for the current location.
-  // This prevents a new Overpass request on every department filter.
+  // Cache nearby facilities for the current location.
+  // This prevents another backend/Overpass request
+  // whenever the user changes department filters.
   private nearbyFacilitiesCache: {
     latitude: number;
     longitude: number;
@@ -165,7 +193,9 @@ class LocationService {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
         reject(
-          new Error('Geolocation is not supported by your browser.')
+          new Error(
+            'Geolocation is not supported by your browser.'
+          )
         );
         return;
       }
@@ -178,23 +208,33 @@ class LocationService {
             accuracy: position.coords.accuracy
           });
         },
+
         error => {
           let message =
             'Location access is required to find healthcare services near you.';
 
-          if (error.code === error.PERMISSION_DENIED) {
+          if (
+            error.code ===
+            error.PERMISSION_DENIED
+          ) {
             message =
               'Location access is required to find healthcare services near you. Please enable location permission in your browser.';
-          } else if (error.code === error.POSITION_UNAVAILABLE) {
+          } else if (
+            error.code ===
+            error.POSITION_UNAVAILABLE
+          ) {
             message =
               'Current location is unavailable. Please check your network or device GPS.';
-          } else if (error.code === error.TIMEOUT) {
+          } else if (
+            error.code === error.TIMEOUT
+          ) {
             message =
               'Location request timed out. Please try again.';
           }
 
           reject(new Error(message));
         },
+
         {
           enableHighAccuracy: true,
           timeout: 10000,
@@ -204,16 +244,19 @@ class LocationService {
     });
   }
 
-  analyzeSymptom(query: string): SymptomMatch | null {
+  analyzeSymptom(
+    query: string
+  ): SymptomMatch | null {
     if (!query || query.trim().length < 2) {
       return null;
     }
 
     const lower = query.toLowerCase();
 
-    for (const [symptomKey, data] of Object.entries(
-      SYMPTOM_DATABASE
-    )) {
+    for (const [
+      symptomKey,
+      data
+    ] of Object.entries(SYMPTOM_DATABASE)) {
       if (lower.includes(symptomKey)) {
         return {
           query,
@@ -227,7 +270,8 @@ class LocationService {
 
     return {
       query,
-      recommendedDepartment: 'General Medicine',
+      recommendedDepartment:
+        'General Medicine',
       explanation:
         'General Medicine may be an appropriate starting department for broad clinical evaluation of these symptoms.',
       disclaimer:
@@ -237,7 +281,10 @@ class LocationService {
 
   private getFacilityCoordinates(
     element: any
-  ): { latitude: number; longitude: number } | null {
+  ): {
+    latitude: number;
+    longitude: number;
+  } | null {
     if (
       typeof element.lat === 'number' &&
       typeof element.lon === 'number'
@@ -271,9 +318,12 @@ class LocationService {
       ''
     ).toLowerCase();
 
-    const name = (tags.name || '').toLowerCase();
+    const name = (
+      tags.name || ''
+    ).toLowerCase();
 
-    const combined = `${speciality} ${name}`;
+    const combined =
+      `${speciality} ${name}`;
 
     if (
       combined.includes('orthop') ||
@@ -351,7 +401,9 @@ class LocationService {
       return 'Pediatrics';
     }
 
-    if (tags.amenity === 'hospital') {
+    if (
+      tags.amenity === 'hospital'
+    ) {
       return 'General Medicine';
     }
 
@@ -422,16 +474,19 @@ class LocationService {
     const possibleRating =
       tags.rating ||
       tags['review:rating'] ||
-      tags['stars'];
+      tags.stars;
 
-    const rating = Number(possibleRating);
+    const rating =
+      Number(possibleRating);
 
     if (
       Number.isFinite(rating) &&
       rating >= 0 &&
       rating <= 5
     ) {
-      return Number(rating.toFixed(1));
+      return Number(
+        rating.toFixed(1)
+      );
     }
 
     return 4.2;
@@ -446,7 +501,8 @@ class LocationService {
       tags['rating:count'] ||
       tags.reviews;
 
-    const reviewCount = Number(possibleCount);
+    const reviewCount =
+      Number(possibleCount);
 
     if (
       Number.isFinite(reviewCount) &&
@@ -469,15 +525,21 @@ class LocationService {
       tags['healthcare:fee'];
 
     if (possibleFee) {
-      const numericFee = Number(
-        possibleFee.replace(/[^\d.]/g, '')
-      );
+      const numericFee =
+        Number(
+          possibleFee.replace(
+            /[^\d.]/g,
+            ''
+          )
+        );
 
       if (
         Number.isFinite(numericFee) &&
         numericFee > 0
       ) {
-        return Math.round(numericFee);
+        return Math.round(
+          numericFee
+        );
       }
     }
 
@@ -495,18 +557,21 @@ class LocationService {
       filterDepartment.trim() !== ''
     ) {
       const term =
-        filterDepartment.toLowerCase().trim();
+        filterDepartment
+          .toLowerCase()
+          .trim();
 
-      result = facilities.filter(hospital =>
-        hospital.department
-          .toLowerCase()
-          .includes(term) ||
-        hospital.specialty
-          .toLowerCase()
-          .includes(term) ||
-        hospital.name
-          .toLowerCase()
-          .includes(term)
+      result = facilities.filter(
+        hospital =>
+          hospital.department
+            .toLowerCase()
+            .includes(term) ||
+          hospital.specialty
+            .toLowerCase()
+            .includes(term) ||
+          hospital.name
+            .toLowerCase()
+            .includes(term)
       );
     }
 
@@ -521,13 +586,13 @@ class LocationService {
     userCoords: UserCoordinates,
     filterDepartment?: string
   ): Promise<Hospital[]> {
-    // Use already-loaded facilities when the location is the same.
+    // Use cached facilities when the location is the same.
     if (
       this.nearbyFacilitiesCache &&
       this.nearbyFacilitiesCache.latitude ===
-        userCoords.latitude &&
+      userCoords.latitude &&
       this.nearbyFacilitiesCache.longitude ===
-        userCoords.longitude
+      userCoords.longitude
     ) {
       return this.filterAndSortFacilities(
         this.nearbyFacilitiesCache.facilities,
@@ -537,34 +602,46 @@ class LocationService {
 
     const radius = 10000;
 
-    const query = `
-      [out:json][timeout:25];
-      (
-        nwr["amenity"~"hospital|clinic|doctors|dentist"](
-          around:${radius},
-          ${userCoords.latitude},
-          ${userCoords.longitude}
-        );
-
-        nwr["healthcare"~"hospital|clinic|doctor"](
-          around:${radius},
-          ${userCoords.latitude},
-          ${userCoords.longitude}
-        );
-      );
-      out center tags;
-    `;
-
     try {
+      /*
+       * IMPORTANT:
+       * The browser must NOT call Overpass directly.
+       *
+       * Browser
+       *   ↓
+       * Render Spring Boot backend
+       *   ↓
+       * Overpass API
+       *
+       * This avoids the Overpass CORS problem.
+       */
+
+      const backendUrl =
+        import.meta.env.VITE_API_BASE_URL ||
+        'https://self-healthcare-backend.onrender.com/api';
+
+      const url =
+        `${backendUrl}/healthcare/nearby` +
+        `?latitude=${encodeURIComponent(
+          userCoords.latitude
+        )}` +
+        `&longitude=${encodeURIComponent(
+          userCoords.longitude
+        )}` +
+        `&radius=${radius}`;
+
+      console.log(
+        'Loading nearby healthcare facilities from backend:',
+        url
+      );
+
       const response = await fetch(
-        'https://overpass-api.de/api/interpreter',
+        url,
         {
           method: 'POST',
           headers: {
-            'Content-Type':
-              'application/x-www-form-urlencoded'
-          },
-          body: `data=${encodeURIComponent(query)}`
+            Accept: 'application/json'
+          }
         }
       );
 
@@ -574,14 +651,20 @@ class LocationService {
         );
       }
 
-      const data = await response.json();
+      const data =
+        await response.json();
 
       const facilities: Hospital[] = [];
       const seen = new Set<string>();
 
-      for (const element of data.elements || []) {
+      for (
+        const element of
+        data.elements || []
+      ) {
         const coordinates =
-          this.getFacilityCoordinates(element);
+          this.getFacilityCoordinates(
+            element
+          );
 
         if (!coordinates) {
           continue;
@@ -590,7 +673,8 @@ class LocationService {
         const tags: Record<string, string> =
           element.tags || {};
 
-        const name = tags.name?.trim();
+        const name =
+          tags.name?.trim();
 
         if (!name) {
           continue;
@@ -605,12 +689,13 @@ class LocationService {
 
         seen.add(uniqueKey);
 
-        const distance = calculateHaversineDistance(
-          userCoords.latitude,
-          userCoords.longitude,
-          coordinates.latitude,
-          coordinates.longitude
-        );
+        const distance =
+          calculateHaversineDistance(
+            userCoords.latitude,
+            userCoords.longitude,
+            coordinates.latitude,
+            coordinates.longitude
+          );
 
         const department =
           this.getDepartment(tags);
@@ -622,42 +707,75 @@ class LocationService {
           tags.emergency === 'yes';
 
         facilities.push({
-          id: `osm_${element.type}_${element.id}`,
+          id:
+            `osm_${element.type}_${element.id}`,
+
           name,
-          doctor: 'Specialist details available at facility',
+
+          doctor:
+            'Specialist details available at facility',
+
           department,
+
           specialty,
-          latitude: coordinates.latitude,
-          longitude: coordinates.longitude,
+
+          latitude:
+            coordinates.latitude,
+
+          longitude:
+            coordinates.longitude,
+
           distance,
 
-          rating: this.getRating(tags),
-          reviewCount: this.getReviewCount(tags),
+          rating:
+            this.getRating(tags),
+
+          reviewCount:
+            this.getReviewCount(tags),
+
           isDemoRating:
             !tags.rating &&
             !tags['review:rating'] &&
-            !tags['stars'],
+            !tags.stars,
+
           isDemoFee:
             !tags['fee:amount'] &&
             !tags['consultation:fee'] &&
             !tags['healthcare:fee'],
-          consultationFee: this.getConsultationFee(tags),
 
-          timing: this.getTiming(tags),
+          consultationFee:
+            this.getConsultationFee(tags),
+
+          timing:
+            this.getTiming(tags),
+
           emergencyAvailable,
-          address: this.getAddress(tags),
-          phone: this.getPhone(tags),
+
+          address:
+            this.getAddress(tags),
+
+          phone:
+            this.getPhone(tags),
+
           availableSlots: []
         });
       }
 
-      // Save the real nearby facilities.
-      // Filters will use this cached data instead of calling Overpass again.
+      // Save real nearby facilities.
+      // Department filters use this cached data.
       this.nearbyFacilitiesCache = {
-        latitude: userCoords.latitude,
-        longitude: userCoords.longitude,
+        latitude:
+          userCoords.latitude,
+
+        longitude:
+          userCoords.longitude,
+
         facilities
       };
+
+      console.log(
+        `Loaded ${facilities.length} nearby healthcare facilities.`
+      );
 
       return this.filterAndSortFacilities(
         facilities,
@@ -677,11 +795,14 @@ class LocationService {
     userCoords: UserCoordinates
   ): Promise<Hospital[]> {
     const all =
-      await this.getNearbyHospitals(userCoords);
+      await this.getNearbyHospitals(
+        userCoords
+      );
 
     return all
       .filter(
-        hospital => hospital.emergencyAvailable
+        hospital =>
+          hospital.emergencyAvailable
       )
       .sort(
         (a, b) =>
@@ -690,7 +811,9 @@ class LocationService {
       );
   }
 
-  getDirectionsUrl(hospital: Hospital): string {
+  getDirectionsUrl(
+    hospital: Hospital
+  ): string {
     return `https://www.google.com/maps/dir/?api=1&destination=${hospital.latitude},${hospital.longitude}`;
   }
 }
